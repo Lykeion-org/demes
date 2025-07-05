@@ -1,0 +1,8 @@
+use_cli: false
+use_grpc_server: true
+user_service_port: ":45002"
+database_host: "localhost"
+database_port: 10001
+database_name: "demes"
+database_username: "postgres"
+database_password: "postgres"
