@@ -88,10 +88,10 @@ func (s *DemesServer) DeleteUser(ctx context.Context, req *pb.UserUidRequest) (*
 }
 
 func (s *DemesServer) ListUsers(ctx context.Context, req *pb.ListUsersRequest) (*pb.ListUsersResponse, error) {
-	page := int(req.Offset/req.Limit) + 1
-	if req.Limit == 0 {
+	if req.Limit <= 0 {
 		req.Limit = 10
 	}
+	page := int(req.Offset/req.Limit) + 1
 
 	users, err := s.UserRepository.ListUsers(ctx, page, int(req.Limit))
 	if err != nil {
