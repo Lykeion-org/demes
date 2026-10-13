@@ -6,11 +6,15 @@ import (
 	"encoding/hex"
 	"errors"
 	"log/slog"
+	"strings"
 	"time"
 
 	"github.com/Lykeion-org/demes/internal/models"
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgconn"
 	"golang.org/x/crypto/bcrypt"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"gorm.io/gorm"
 )
 
@@ -36,7 +40,19 @@ func NewUserRepository(db *gorm.DB) UserRepository {
 }
 
 func(r *userRepository)CreateUser(ctx context.Context, email string, password string) (*models.LykeionUser, error){
-	
+	email = normalizeEmail(email)
+	if email == "" {
+		return nil, status.Error(codes.InvalidArgument, "email address is required")
+	}
+
+	_, err := r.ReadUserByEmailAddress(ctx, email)
+	if err == nil {
+		return nil, errEmailTaken
+	}
+	if !errors.Is(err, errUserNotFound) {
+		return nil, err
+	}
+
 	passwordHash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
 		return nil, errors.New("failed to hash password")
@@ -60,6 +76,7 @@ func(r *userRepository)CreateUser(ctx context.Context, email string, password st
 		WithContext(ctx).
 		Create(newUser).
 		Error
+	if isUniqueViolation(err) { return nil, errEmailTaken }
 	if err != nil { return nil, errors.New("error creating user")}
 	
 	return newUser, nil
@@ -93,13 +110,13 @@ func(r *userRepository)ReadUserByEmailAddress(ctx context.Context, email string)
 	
 	err := r.db.
 		WithContext(ctx).
-		Where("email_address = ?", email).
+		Where("lower(email_address) = ?", normalizeEmail(email)).
 		First(&user).
 		Error
 
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, errors.New("user not found")
+			return nil, errUserNotFound
 		}
 		return nil, errors.New("error fetching user")
 	}
@@ -117,6 +134,9 @@ func(r *userRepository)UpdateUser(ctx context.Context, user *models.LykeionUser)
 		Save(user).
 		Error
 
+	if isUniqueViolation(err) {
+		return nil, errEmailTaken
+	}
 	if err != nil {
 		return nil, errors.New("error updating user")
 	}
@@ -194,6 +214,21 @@ func(r *userRepository)CheckPassword(ctx context.Context, email string, password
 
 	return true, nil
 
+}
+
+var (
+	errUserNotFound = errors.New("user not found")
+	errEmailTaken   = status.Error(codes.AlreadyExists, "email address is already registered")
+)
+
+// Emails are compared case-insensitively, so "A@x.com" and "a@x.com" are the same account.
+func normalizeEmail(email string) string {
+	return strings.ToLower(strings.TrimSpace(email))
+}
+
+func isUniqueViolation(err error) bool {
+	var pgErr *pgconn.PgError
+	return errors.As(err, &pgErr) && pgErr.Code == "23505"
 }
 
 func hashEmail(email string) string {
