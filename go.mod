@@ -5,7 +5,6 @@ go 1.24.1
 require (
 	github.com/Lykeion-org/go-shared v0.0.0-20250705211659-99fb7d06aa32
 	github.com/google/uuid v1.6.0
-	gorm.io/driver/postgres v1.6.0
 	gorm.io/gorm v1.30.0
 )
 
@@ -15,6 +14,7 @@ require (
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20250324211829-b45e905df463 // indirect
 	google.golang.org/protobuf v1.36.6 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
+	gorm.io/driver/postgres v1.6.0 // indirect
 )
 
 require (
