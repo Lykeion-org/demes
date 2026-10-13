@@ -3,7 +3,7 @@ module github.com/Lykeion-org/demes
 go 1.24.1
 
 require (
-	github.com/Lykeion-org/go-shared v0.0.0-00010101000000-000000000000
+	github.com/Lykeion-org/go-shared v0.0.0-20250705211659-99fb7d06aa32
 	github.com/google/uuid v1.6.0
 	gorm.io/driver/postgres v1.6.0
 	gorm.io/gorm v1.30.0
@@ -29,5 +29,3 @@ require (
 	golang.org/x/text v0.23.0 // indirect
 	google.golang.org/grpc v1.73.0
 )
-
-replace github.com/Lykeion-org/go-shared => /Users/kevin/Repositories/lykeion/lib/go-shared
